@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A retro browser file API playground. Try file inputs, native pickers, drag and drop, clipboard, browser storage, and file watching.">
+  <title>File Galaxy · Browser File API Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="shell.js" defer></script>
+</head>
+<body class="shell">
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <div class="site">
+    <header class="mast">
+      <div class="mast-copy">
+        <p class="kicker">✦ &nbsp; THE BROWSER FILE API LAB</p>
+        <h1>FILE GALAXY</h1>
+        <p class="subtitle">A field guide to files on the World Wide Web.</p>
+      </div>
+      <div class="orbit" aria-hidden="true"><span></span></div>
+      <div class="mast-stars" aria-hidden="true">✦ &nbsp; · &nbsp; ✧</div>
+    </header>
+    <div class="construction">
+      <span class="hazard" aria-hidden="true"></span>
+      <strong>⚠ &nbsp; UNDER CONSTRUCTION</strong>
+      <span>Some experiments depend on your browser.</span>
+      <span class="hazard" aria-hidden="true"></span>
+    </div>
+    <div class="frame-grid">
+      <aside class="frame sidebar">
+        <div class="bar"><span aria-hidden="true">✦</span> Site directory</div>
+        <nav aria-label="Experiments">
+          <a href="lab.html#intake" target="experiments" aria-current="page"><span aria-hidden="true">▤</span> File intake</a>
+          <a href="lab.html#disk" target="experiments"><span aria-hidden="true">▣</span> Local drive</a>
+          <a href="lab.html#vault" target="experiments"><span aria-hidden="true">▦</span> Private vault</a>
+          <a href="lab.html#watch" target="experiments"><span aria-hidden="true">◉</span> Signal watch</a>
+          <a href="lab.html#support" target="experiments"><span aria-hidden="true">✧</span> Compatibility</a>
+        </nav>
+        <div class="sidebar-note">
+          <b>LOCAL TRANSMISSION ONLY</b>
+          <p>File contents stay in this browser. This lab makes no uploads.</p>
+        </div>
+        <div class="badges"><span>HTML<br><b>POWERED</b></span><span>NO<br><b>COOKIES</b></span></div>
+      </aside>
+      <main class="frame main-frame">
+        <div class="bar"><span aria-hidden="true">▣</span> Experiment window <a href="lab.html#intake" id="standalone">Open full page</a></div>
+        <iframe name="experiments" id="experiments" src="lab.html#intake" title="File API experiments" allow="clipboard-read; clipboard-write"></iframe>
+      </main>
+    </div>
+    <footer><span>✦ &nbsp; FILE GALAXY WEB LAB</span><a href="https://github.com/k-ode/builds/tree/main/web/file">View source on GitHub</a></footer>
+  </div>
+</body>
+</html>

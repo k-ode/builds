@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive browser file API experiments.">
+  <title>Experiments · File Galaxy</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="lab.js" defer></script>
+</head>
+<body class="lab">
+<main>
+  <section id="intake">
+    <p class="kicker">✦ &nbsp; INCOMING FILES</p>
+    <h1>File intake</h1>
+    <p>Choose, drop, or paste files to inspect their metadata and first bytes.</p>
+    <div class="drop" id="drop">
+      <span class="drop-icon" aria-hidden="true">⇩</span>
+      <strong>Drop files or a folder here</strong>
+      <small>Tests plain files, legacy directory entries, and native handles.</small>
+    </div>
+    <div class="controls">
+      <label class="button picker">Choose files<input id="file-input" type="file" multiple></label>
+      <label class="button picker">Choose folder snapshot<input id="folder-input" type="file" webkitdirectory multiple></label>
+      <button id="sample">Load sample</button>
+    </div>
+    <details class="box">
+      <summary>Clipboard experiments</summary>
+      <label for="paste">Focus this field and paste files or text</label>
+      <textarea id="paste" rows="2" placeholder="Ctrl+V or ⌘+V"></textarea>
+      <div class="controls"><button id="clipboard-read">Read clipboard items</button><button id="clipboard-write">Copy sample text</button></div>
+    </details>
+    <div class="box">
+      <h2>File manifest</h2>
+      <div id="manifest"></div>
+      <div class="controls">
+        <button id="stream" disabled>Read stream</button>
+        <button id="sync-read" disabled>Read in worker</button>
+        <button id="hash" disabled>SHA-256</button>
+        <button id="download" disabled>Download selected</button>
+      </div>
+      <pre id="inspection" class="terminal" tabindex="0">Select a file to inspect.</pre>
+    </div>
+  </section>
+  <section id="disk" hidden>
+    <p class="kicker">✦ &nbsp; NATIVE PICKERS</p>
+    <h1>Local drive</h1>
+    <p>Try real file and directory handles. If the chooser aborts or never appears, try this page as a top-level tab in desktop Chrome or Edge.</p>
+    <div class="box">
+      <h2>Open and reconnect</h2>
+      <div class="controls">
+        <button id="open-file">Open file</button><button id="open-folder">Open folder</button><button id="read-handle" disabled>Read handle</button>
+      </div>
+      <p class="readout" id="handle-label">No handle selected.</p>
+      <div class="controls">
+        <button id="permission-query" disabled>Check permissions</button><button id="permission-request" disabled>Request read permission</button>
+        <button id="handle-store" disabled>Remember handle</button><button id="handle-restore">Restore handle</button><button id="handle-forget">Forget saved handle</button>
+      </div>
+      <p class="hint">IndexedDB can remember the handle. The browser may ask you to grant permission again.</p>
+    </div>
+    <div class="box">
+      <h2>Write generated text</h2>
+      <label for="disk-text">Text to write</label>
+      <textarea id="disk-text" rows="4">Greetings from File Galaxy!
+Your browser wrote this file.</textarea>
+      <div class="controls"><button id="save-file">Save text as…</button><button id="load-text" disabled>Load opened text file</button><button id="write-back" disabled>Save to opened file…</button></div>
+      <p class="hint">Save As opens a browser picker. To try write-back, open a scratch UTF-8 text file under 1 MiB, load its text, then edit and save. The lab checks for changes before replacing it.</p>
+    </div>
+  </section>
+  <section id="vault" hidden>
+    <p class="kicker">✦ &nbsp; ORIGIN PRIVATE FILE SYSTEM</p>
+    <h1>Private vault</h1>
+    <p>Read and write a scratch file in storage reserved for this site. It lives in the browser’s storage and persists until deleted or site data is cleared.</p>
+    <div class="box">
+      <h2>Scratch file</h2>
+      <label for="vault-text">Contents of notes.txt</label>
+      <textarea id="vault-text" rows="5">Private transmission from File Galaxy.</textarea>
+      <div class="controls">
+        <button id="vault-write">Write async</button><button id="vault-read">Read</button><button id="vault-list">List vault</button>
+        <button id="vault-sync">Write and read in worker</button><button id="vault-delete">Delete scratch file</button>
+      </div>
+      <pre class="terminal" id="vault-result" tabindex="0">No vault command run yet.</pre>
+    </div>
+    <div class="box"><h2>Storage diagnostics</h2>
+      <p>Check your origin’s usage and quota, or probe the older sandboxed filesystem API.</p>
+      <div class="controls"><button id="storage-estimate">Estimate storage</button><button id="legacy-fs">Probe legacy filesystem</button></div>
+    </div>
+  </section>
+  <section id="watch" hidden>
+    <p class="kicker">✦ &nbsp; LIVE FOLDER SIGNALS</p>
+    <h1>Signal watch</h1>
+    <p>Select a folder here or in Local drive. Change a file outside the browser and see what gets reported.</p>
+    <div class="box">
+      <h2>Directory monitor</h2>
+      <div class="controls"><button id="watch-folder">Choose folder</button><button id="watch-poll" disabled>Start polling</button><button id="watch-native" disabled>Start native observer</button><button id="watch-stop" disabled>Stop</button></div>
+      <p class="readout" id="watch-state">No folder selected.</p>
+      <p class="hint">Polling compares paths, sizes, and timestamps every 2 seconds while visible. Native observation is experimental and may be unavailable. Scans are capped at 1,000 entries.</p>
+    </div>
+  </section>
+  <section id="support" hidden>
+    <p class="kicker">✦ &nbsp; DETECTED FEATURES</p>
+    <h1>Compatibility</h1>
+    <p>“Exposed” means the API is present. Try the corresponding experiment to see whether your browser, permissions, or embedded preview allow it to run.</p>
+    <table><thead><tr><th scope="col">API</th><th scope="col">This browser</th></tr></thead><tbody id="matrix"></tbody></table>
+    <div class="box"><h2>Further reading</h2>
+      <ul>
+        <li><a href="https://www.w3.org/TR/FileAPI/" target="_blank" rel="noopener">W3C File API</a></li>
+        <li><a href="https://developer.chrome.com/docs/capabilities/web-apis/file-system-access" target="_blank" rel="noopener">Chrome’s file and directory picker guide</a></li>
+        <li><a href="https://fs.spec.whatwg.org/" target="_blank" rel="noopener">WHATWG File System Standard</a></li>
+        <li><a href="https://github.com/whatwg/fs/blob/main/proposals/FileSystemObserver.md" target="_blank" rel="noopener">FileSystemObserver proposal</a></li>
+        <li><a href="https://www.w3.org/TR/clipboard-apis/" target="_blank" rel="noopener">W3C Clipboard API</a></li>
+      </ul>
+      <p class="hint">OS “Open with” registration requires an installed app. This static playground probes Launch Queue availability without registering a file association.</p>
+    </div>
+  </section>
+  <section class="box log-box" aria-labelledby="log-heading">
+    <div class="log-head"><h2 id="log-heading">Transmission log</h2><button id="clear-log">Clear log</button></div>
+    <pre id="log" class="terminal" tabindex="0" role="log"></pre>
+  </section>
+</main>
+</body>
+</html>
