@@ -1,0 +1,103 @@
+name: Deploy static site to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ode-kim-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Stage the tracked site files
+        shell: bash
+        run: |
+          assets="$RUNNER_TEMP/builds-static"
+          mkdir "$assets"
+          git archive HEAD -- . ':!.github' | tar -x -C "$assets"
+          if [[ -n "$(find "$assets" -type l -print -quit)" ]]; then
+            echo "::error::Static assets must be regular files, not symbolic links."
+            exit 1
+          fi
+
+      - name: Upload and activate a Worker version
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::Configure the CLOUDFLARE_API_TOKEN secret and CLOUDFLARE_ACCOUNT_ID variable."
+            exit 1
+          fi
+          output="$RUNNER_TEMP/wrangler-version.ndjson"
+          WRANGLER_OUTPUT_FILE_PATH="$output" npx --yes wrangler@4.165.0 versions upload \
+            --name ode-kim-file-galaxy \
+            --assets "$RUNNER_TEMP/builds-static" \
+            --compatibility-date 2026-11-18 \
+            --message "GitHub commit $GITHUB_SHA"
+          version_id="$(node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const rows = readFileSync(process.argv[1], "utf8").trim().split("\n").map(line => JSON.parse(line));
+            const id = rows.findLast(row => row.type === "version-upload")?.version_id;
+            if (!id) throw new Error("Wrangler did not report a Worker version ID");
+            console.log(id);
+          ' "$output")"
+          # Cloudflare briefly returned 100146 for a version it had just uploaded.
+          # Wait for reads to catch up before promoting. Remove this once newly
+          # uploaded versions are consistently readable immediately.
+          for attempt in {1..6}; do
+            if details="$(npx --yes wrangler@4.165.0 versions view "$version_id" \
+              --name ode-kim-file-galaxy --json 2>&1)"; then
+              break
+            fi
+            if (( attempt == 6 )) || [[ "$details" != *100146* ]]; then
+              printf '%s\n' "$details" >&2
+              exit 1
+            fi
+            sleep 5
+          done
+          # Promote the assets without modifying the existing domain or DNS configuration.
+          npx --yes wrangler@4.165.0 versions deploy "$version_id@100" \
+            --name ode-kim-file-galaxy --yes --message "GitHub commit $GITHUB_SHA"
+
+      - name: Verify a directory index is served over HTTPS
+        shell: bash
+        run: |
+          assets="$RUNNER_TEMP/builds-static"
+          index="$(find "$assets" -type f -name index.html -print -quit)"
+          if [[ -z "$index" ]]; then
+            echo "No index.html in this revision. Worker deployment completed."
+            exit 0
+          fi
+          path="$(node -e 'console.log(process.argv[1].split("/").slice(0, -1).map(encodeURIComponent).join("/"))' "${index#"$assets"/}")"
+          url="https://ode.kim/${path:+$path/}"
+          for attempt in {1..8}; do
+            if curl --fail --silent --show-error --max-time 10 \
+              "$url" --output "$RUNNER_TEMP/deployed-index.html" &&
+              cmp -s "$index" "$RUNNER_TEMP/deployed-index.html"; then
+              exit 0
+            fi
+            if (( attempt < 8 )); then sleep 5; fi
+          done
+          echo "::error::The deployed index at $url does not match this commit."
+          exit 1
