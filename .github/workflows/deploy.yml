@@ -51,7 +51,7 @@ jobs:
           fi
           output="$RUNNER_TEMP/wrangler-version.ndjson"
           WRANGLER_OUTPUT_FILE_PATH="$output" npx --yes wrangler@4.165.0 versions upload \
-            --name ode-kim-file-galaxy \
+            --name ode-kim-builds \
             --assets "$RUNNER_TEMP/builds-static" \
             --compatibility-date 2026-11-18 \
             --message "GitHub commit $GITHUB_SHA"
@@ -67,7 +67,7 @@ jobs:
           # uploaded versions are consistently readable immediately.
           for attempt in {1..6}; do
             if details="$(npx --yes wrangler@4.165.0 versions view "$version_id" \
-              --name ode-kim-file-galaxy --json 2>&1)"; then
+              --name ode-kim-builds --json 2>&1)"; then
               break
             fi
             if (( attempt == 6 )) || [[ "$details" != *100146* ]]; then
@@ -78,7 +78,7 @@ jobs:
           done
           # Promote the assets without modifying the existing domain or DNS configuration.
           npx --yes wrangler@4.165.0 versions deploy "$version_id@100" \
-            --name ode-kim-file-galaxy --yes --message "GitHub commit $GITHUB_SHA"
+            --name ode-kim-builds --yes --message "GitHub commit $GITHUB_SHA"
 
       - name: Verify a directory index is served over HTTPS
         shell: bash
