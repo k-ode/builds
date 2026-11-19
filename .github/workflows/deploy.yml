@@ -30,8 +30,8 @@ jobs:
       - name: Stage the tracked site files
         shell: bash
         run: |
-          assets="$RUNNER_TEMP/builds-static"
-          mkdir "$assets"
+          assets="$RUNNER_TEMP/builds-static/builds"
+          mkdir -p "$assets"
           git archive HEAD -- . ':!.github' | tar -x -C "$assets"
           if [[ -n "$(find "$assets" -type l -print -quit)" ]]; then
             echo "::error::Static assets must be regular files, not symbolic links."
@@ -80,24 +80,23 @@ jobs:
           npx --yes wrangler@4.165.0 versions deploy "$version_id@100" \
             --name ode-kim-builds --yes --message "GitHub commit $GITHUB_SHA"
 
-      - name: Verify a directory index is served over HTTPS
+      - name: Verify the project directory and File Galaxy over HTTPS
         shell: bash
         run: |
           assets="$RUNNER_TEMP/builds-static"
-          index="$(find "$assets" -type f -name index.html -print -quit)"
-          if [[ -z "$index" ]]; then
-            echo "No index.html in this revision. Worker deployment completed."
-            exit 0
-          fi
-          path="$(node -e 'console.log(process.argv[1].split("/").slice(0, -1).map(encodeURIComponent).join("/"))' "${index#"$assets"/}")"
-          url="https://ode.kim/${path:+$path/}"
-          for attempt in {1..8}; do
-            if curl --fail --silent --show-error --max-time 10 \
-              "$url" --output "$RUNNER_TEMP/deployed-index.html" &&
-              cmp -s "$index" "$RUNNER_TEMP/deployed-index.html"; then
-              exit 0
-            fi
-            if (( attempt < 8 )); then sleep 5; fi
-          done
-          echo "::error::The deployed index at $url does not match this commit."
-          exit 1
+          verify_index() {
+            local path="$1"
+            local url="https://ode.kim/$path"
+            for attempt in {1..8}; do
+              if curl --fail --silent --show-error --max-time 10 \
+                "$url" --output "$RUNNER_TEMP/deployed-index.html" &&
+                cmp -s "$assets/${path}index.html" "$RUNNER_TEMP/deployed-index.html"; then
+                return 0
+              fi
+              if (( attempt < 8 )); then sleep 5; fi
+            done
+            echo "::error::The deployed index at $url does not match this commit."
+            return 1
+          }
+          verify_index builds/
+          verify_index builds/web/file/
