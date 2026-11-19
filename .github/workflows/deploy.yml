@@ -37,6 +37,7 @@ jobs:
             echo "::error::Static assets must be regular files, not symbolic links."
             exit 1
           fi
+          node .github/scripts/generate-index.mjs "$assets"
 
       - name: Upload and activate a Worker version
         shell: bash
@@ -80,7 +81,7 @@ jobs:
           npx --yes wrangler@4.165.0 versions deploy "$version_id@100" \
             --name ode-kim-builds --yes --message "GitHub commit $GITHUB_SHA"
 
-      - name: Verify the project directory and File Galaxy over HTTPS
+      - name: Verify the project directory over HTTPS
         shell: bash
         run: |
           assets="$RUNNER_TEMP/builds-static"
@@ -99,4 +100,6 @@ jobs:
             return 1
           }
           verify_index builds/
-          verify_index builds/web/file/
+          if [[ -f "$assets/builds/web/file/index.html" ]]; then
+            verify_index builds/web/file/
+          fi

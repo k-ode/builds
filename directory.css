@@ -29,6 +29,7 @@ main > .bar { margin: 0; }
 .project-art span:first-child { align-self: start; }
 .project-art span:last-child { align-self: end; }
 .project-copy h3 { margin: 0; font: bold 1.65rem/1.2 var(--mono); }
+.project-copy, .sidebar nav a { overflow-wrap: anywhere; }
 .project-copy h3 a { color: var(--yellow); }
 .project-copy h3 a:hover { color: white; }
 .project-copy p { margin: 7px 0 12px; color: var(--ink); }
